@@ -26,10 +26,17 @@ final class DotEnvTest extends TestCase
 
         parent::tearDown();
     }
+    
+    public function testLoadFileThrowsExceptionIfFileDoesNotExist(): void
+    {
+        $this->expectException(Exception::class);
+        $this->expectExceptionMessage('File not found: /path/to/file.env');
+        DotEnv::loadFile('/path/to/file.env');
+    }
 
     public function testLoadFileParsesRealisticEnvFixture(): void
     {
-        DotEnv::loadFile(__DIR__ . '/.env.test');
+        DotEnv::loadFile(__DIR__ . '/fixtures/.env.test');
 
         self::assertSame('php-core', $_ENV['APP_NAME']);
         self::assertSame('testing', $_ENV['APP_ENV']);

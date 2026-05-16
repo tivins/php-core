@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-$composer = json_decode(file_get_contents('composer.json'), true);
+$composer = json_decode(file_get_contents(__DIR__ . '/../composer.json'), true);
 $version = $composer['version'];
 echo $version . "\n";
 

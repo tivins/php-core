@@ -4,6 +4,21 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s’inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), et ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [1.1.1] - 2026-05-16
+
+### Modifié
+
+- **`Tivins\PhpCore\Request`** : si la constante `CURLSSLOPT_NATIVE_CA` existe (PHP / libcurl récents) et que la vérification TLS est activée, définition de `CURLOPT_SSL_OPTIONS` vers le magasin de certificats **natif du système** — ce qui évite souvent les échecs TLS sous Windows lorsque `curl.cainfo` n’est pas configuré. Une fusion explicite via `curlOptions()` remplace encore cette valeur si besoin.
+
+## [1.1.0] - 2026-05-16
+
+### Ajouté
+
+- **`Tivins\PhpCore\Request`** : client HTTP fluent basé sur cURL (verbes courants, requête `query`, corps texte ou `jsonBody`, `bearerToken`, auth basique, timeout, redirections, vérification TLS, `userAgent`, fusion d’options `curl_*` avec `curlOptions()`).
+- **`Tivins\PhpCore\Response`** : statut, en-têtes (noms en minuscules, valeurs répétables), corps, erreurs cURL (`hasCurlError`, `isSuccessful`), décodage JSON `decodeJson()`.
+- Dépendance d’exécution **`php`**: `^8.2`.
+- **`tests/RequestTest.php`** : fichier local `file://`, exemple réseau avec requêtes ignorées si hors ligne, tests valeur `Response`.
+
 ## [1.0.0] - 2026-05-16
 
 ### Contenu de la bibliothèque
