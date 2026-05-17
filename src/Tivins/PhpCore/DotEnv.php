@@ -20,6 +20,12 @@ class DotEnv
         self::loadLines($lines);
     }
 
+    public static function tryLoadFile(string $filename): void
+    { 
+        try { self::loadFile($filename); } 
+        catch (Exception) {}
+    }
+
     /**
      * Override the environment variables with the lines in the file.
      */
