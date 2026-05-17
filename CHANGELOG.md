@@ -4,6 +4,18 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s’inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), et ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [1.2.1] - 2026-05-17
+
+### Ajouté
+
+- **`Tivins\PhpCore\Api\JwtSigningSecret`** : clé HS256 lue depuis la variable d’environnement `JWT_SECRET` (minimum 32 octets).
+- **`tests/AccessTokenTest.php`** : émission / vérification JWT et garde-fous sur la clé.
+
+### Modifié
+
+- **`Tivins\PhpCore\Api\AccessToken`** : algorithme centralisé, absence de `sub` après décodage traitée comme invalide, documentation des erreurs de configuration.
+- **`Tivins\PhpCore\Api\Auth`**, **`JsonResponder`**, **`Router`** : même ordre de déclaration `strict_types` que le reste du paquet.
+
 ## [1.2.0] - 2026-05-17
 
 ### Ajouté
