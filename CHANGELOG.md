@@ -4,6 +4,17 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s’inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), et ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [1.4.0] - 2026-05-18
+
+### Ajouté
+
+- **`Tivins\PhpCore\Io\File`** : lecture et écriture de fichiers texte (`read`, `write`) et JSON (`readJSON`, `writeJSON`) avec `JSON_THROW_ON_ERROR` et options Unicode / slashs non échappés.
+- **`tests/FileTest.php`** : couverture des chemins principaux (lecture/écriture, JSON valide ou invalide, fichier vide).
+
+### Modifié
+
+- **`Tivins\PhpCore\Io\File`** : erreurs I/O explicites (`File not found`, `Cannot read file`, `Empty file`, `Cannot write file`) au lieu de `TypeError` ; JSON `0` accepté par `readJSON` ; écriture avec verrou `LOCK_EX`.
+
 ## [1.3.0] - 2026-05-17
 
 ### Ajouté

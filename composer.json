@@ -1,6 +1,6 @@
 {
     "name": "tivins/php-core",
-    "version": "1.3.0",
+    "version": "1.4.0",
     "type": "library",
     "license": "MIT",
     "autoload": {
