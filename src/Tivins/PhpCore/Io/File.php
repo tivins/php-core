@@ -57,8 +57,12 @@ class File
      * @throws Exception if the file cannot be written
      * @return int the number of bytes written
      */
-    public static function writeJSON(string $path, mixed $data): int
+    public static function writeJSON(string $path, mixed $data, bool $pretty = false): int
     {
-        return self::write($path, json_encode($data, JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES));
+        $flags = JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES;
+        if ($pretty) {
+            $flags |= JSON_PRETTY_PRINT;
+        }
+        return self::write($path, json_encode($data, $flags));
     }
 }

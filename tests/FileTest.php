@@ -107,6 +107,21 @@ final class FileTest extends TestCase
         self::assertSame($payload, File::readJSON($path));
     }
 
+    public function testWriteJSONPrettyPrint(): void
+    {
+        $path = $this->tempPath();
+        $payload = ['message' => 'café', 'path' => '/api/v1'];
+
+        File::writeJSON($path, $payload, pretty: true);
+
+        $expected = json_encode(
+            $payload,
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT
+        );
+        self::assertSame($expected, file_get_contents($path));
+        self::assertSame($payload, File::readJSON($path));
+    }
+
     public function testWriteThrowsWhenPathIsNotWritable(): void
     {
         $this->expectException(Exception::class);

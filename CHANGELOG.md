@@ -6,7 +6,9 @@ Le format s’inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/
 
 ## [1.4.1] - 2026-05-18
 
-## fix tag
+### Ajouté
+
+- **`Tivins\PhpCore\Io\File::writeJSON`** : paramètre `$pretty` (défaut `false`) pour activer `JSON_PRETTY_PRINT`.
 
 ## [1.4.0] - 2026-05-18
 
