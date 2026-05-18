@@ -4,6 +4,10 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s’inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), et ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [1.4.1] - 2026-05-18
+
+## fix tag
+
 ## [1.4.0] - 2026-05-18
 
 ### Ajouté
