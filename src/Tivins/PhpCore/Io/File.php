@@ -5,6 +5,8 @@ namespace Tivins\PhpCore\Io;
 
 use Exception;
 use JsonException;
+use RuntimeException;
+use Tivins\PhpCore\Exception\MkDirException;
 
 class File
 {
@@ -37,8 +39,8 @@ class File
     }
 
     /**
-     * @throws Exception if the file cannot be written
      * @return int the number of bytes written
+     * @throws Exception if the file cannot be written
      */
     public static function write(string $path, string $content): int
     {
@@ -53,9 +55,9 @@ class File
     }
 
     /**
-     * @throws JsonException if the data is not valid JSON
-     * @throws Exception if the file cannot be written
      * @return int the number of bytes written
+     * @throws Exception if the file cannot be written
+     * @throws JsonException if the data is not valid JSON
      */
     public static function writeJSON(string $path, mixed $data, bool $pretty = false): int
     {
@@ -64,5 +66,20 @@ class File
             $flags |= JSON_PRETTY_PRINT;
         }
         return self::write($path, json_encode($data, $flags));
+    }
+
+    public static function makeDirForFile(string $file): void
+    {
+        self::makeDir(dirname($file));
+    }
+
+    public static function makeDir(string $dir): void
+    {
+        if (is_dir($dir)) {
+            return;
+        }
+        if (!@mkdir($dir, 0755, true) && !is_dir($dir)) {
+            throw new MkDirException($dir, 'Cannot create the folder: ' . $dir);
+        }
     }
 }

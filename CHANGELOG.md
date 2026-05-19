@@ -4,6 +4,20 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s’inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), et ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [1.5.0] - 2026-05-20
+
+### Ajouté
+
+- **`Tivins\PhpCore\Tty`** : détection du contexte CLI (`isCLI`, `ensureIsCLI`).
+- **`Tivins\PhpCore\Exception\MkDirException`** : erreur dédiée à la création de répertoires (propriété `dir`).
+- **`Tivins\PhpCore\Io\File::makeDir`** et **`makeDirForFile`** : création récursive de dossiers (idempotente si le dossier existe déjà).
+- **`tests/TtyTest.php`** : comportement sous SAPI `cli`.
+- **`tests/FileTest.php`** : couverture de `makeDir` / `makeDirForFile` et de `MkDirException`.
+
+### Corrigé
+
+- **`Tivins\PhpCore\Tty::isCLI`** : retournait l’inverse du SAPI CLI.
+
 ## [1.4.2] - 2026-05-18
 
 fix tag
