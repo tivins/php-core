@@ -88,7 +88,7 @@ composer test
 composer audit
 ```
 
-La CI (GitHub Actions) exécute les tests et `composer audit` sur PHP 8.2–8.4.
+La CI (GitHub Actions) exécute les tests et `composer audit` sur PHP 8.2, 8.3 et 8.4 (PHPUnit 11 en dev).
 
 ## Sécurité
 

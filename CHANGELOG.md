@@ -4,6 +4,12 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s’inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), et ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [1.5.2] - 2026-05-20
+
+### Corrigé
+
+- **CI** : PHPUnit repassé en `^11.5` (compatible PHP 8.2–8.4) ; PHPUnit 13 exige PHP ≥ 8.4.1 et faisait échouer la matrice 8.2/8.3.
+
 ## [1.5.1] - 2026-05-20
 
 ### Ajouté

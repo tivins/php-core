@@ -1,6 +1,6 @@
 {
     "name": "tivins/php-core",
-    "version": "1.5.1",
+    "version": "1.5.2",
     "type": "library",
     "license": "MIT",
     "autoload": {
@@ -19,7 +19,7 @@
         "firebase/php-jwt": "^7.0"
     },
     "require-dev": {
-        "phpunit/phpunit": "^13.1"
+        "phpunit/phpunit": "^11.5"
     },
     "scripts": {
         "test": "phpunit"
