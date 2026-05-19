@@ -4,6 +4,14 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s’inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), et ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [1.5.1] - 2026-05-20
+
+### Ajouté
+
+- **`README.md`** : installation, modules, exemples, limites (SSRF, JWT, Dotenv).
+- **`SECURITY.md`** : signalement de vulnérabilités et bonnes pratiques.
+- **CI GitHub Actions** : `composer test` et `composer audit` sur PHP 8.2–8.4.
+
 ## [1.5.0] - 2026-05-20
 
 ### Ajouté
