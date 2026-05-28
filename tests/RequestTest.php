@@ -90,6 +90,68 @@ final class RequestTest extends TestCase
         self::assertSame('a=1', $response->getHeader('set-cookie'));
     }
 
+    public function testSafetyOptionsCannotBeOverriddenByCurlOptions(): void
+    {
+        $request = Request::get('https://example.com')
+            ->allowedProtocols(CURLPROTO_HTTP | CURLPROTO_HTTPS)
+            ->curlOptions([
+                CURLOPT_PROTOCOLS => CURLPROTO_FILE,
+                CURLOPT_REDIR_PROTOCOLS => CURLPROTO_FILE,
+                CURLOPT_SSL_VERIFYPEER => false,
+                CURLOPT_SSL_VERIFYHOST => 0,
+            ]);
+
+        $options = self::buildCurlOptions($request);
+
+        self::assertSame(CURLPROTO_HTTP | CURLPROTO_HTTPS, $options[CURLOPT_PROTOCOLS]);
+        self::assertSame(CURLPROTO_HTTP | CURLPROTO_HTTPS, $options[CURLOPT_REDIR_PROTOCOLS]);
+        self::assertTrue($options[CURLOPT_SSL_VERIFYPEER]);
+        self::assertSame(2, $options[CURLOPT_SSL_VERIFYHOST]);
+    }
+
+    public function testRedirectsNotFollowedWhenBearerTokenPresent(): void
+    {
+        $withToken = Request::get('https://example.com')->bearerToken('secret');
+        self::assertFalse(self::buildCurlOptions($withToken)[CURLOPT_FOLLOWLOCATION]);
+
+        $withoutToken = Request::get('https://example.com');
+        self::assertTrue(self::buildCurlOptions($withoutToken)[CURLOPT_FOLLOWLOCATION]);
+    }
+
+    public function testExplicitFollowRedirectsOverridesCredentialHeuristic(): void
+    {
+        $request = Request::get('https://example.com')
+            ->bearerToken('secret')
+            ->followRedirects(true);
+
+        self::assertTrue(self::buildCurlOptions($request)[CURLOPT_FOLLOWLOCATION]);
+    }
+
+    public function testHeaderRejectsCrlfInValue(): void
+    {
+        $this->expectException(\ValueError::class);
+        Request::get('https://example.com')->header('X-Test', "evil\r\nInjected: 1");
+    }
+
+    public function testHeaderRejectsCrlfInName(): void
+    {
+        $this->expectException(\ValueError::class);
+        Request::get('https://example.com')->header("X-Test\r\nInjected", 'value');
+    }
+
+    /**
+     * @return array<int, mixed>
+     */
+    private static function buildCurlOptions(Request $request): array
+    {
+        $method = new \ReflectionMethod(Request::class, 'buildCurlOptions');
+
+        /** @var array<int, mixed> $options */
+        $options = $method->invoke($request);
+
+        return $options;
+    }
+
     /**
      * Convertit un chemin absolu local en URL `file:` utilisable par cURL (Windows inclus).
      */

@@ -4,6 +4,32 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s’inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), et ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [2.0.0] - 2026-05-29
+
+### Sécurité
+
+- **`DotEnv`** : les variables d'environnement déjà définies ne sont **plus écrasées par défaut** (`overwrite = false`). Un fichier `.env` ne peut donc plus clobber `PATH`, `LD_PRELOAD` ou toute autre variable héritée du système / du processus parent (vecteur d'injection vers les sous-processus). Les noms de clés invalides (caractères hors `[A-Za-z_][A-Za-z0-9_]*`) sont désormais ignorés.
+- **`Request`** : les garde-fous de sécurité (`CURLOPT_PROTOCOLS`, `CURLOPT_REDIR_PROTOCOLS`, `CURLOPT_SSL_VERIFYPEER/HOST`) sont ré-appliqués **après** la fusion de `curlOptions()` : un appelant ne peut plus désactiver silencieusement l'anti-SSRF ou la vérification TLS via des options cURL brutes. Utilisez `allowedProtocols()` / `verifySsl()`.
+- **`Request`** : anti-fuite d'identifiants sur redirection. `followRedirects` passe en mode automatique (`null`) : les redirections ne sont **pas** suivies lorsqu'un en-tête `Authorization` (`bearerToken()`) ou une auth basique sont présents, afin de ne pas divulguer le jeton à une cible cross-origin (cURL réémet les en-têtes personnalisés sur redirection). Ajout de `CURLOPT_UNRESTRICTED_AUTH = false`.
+- **`Request::header()`** : rejette désormais les noms vides et tout caractère CR/LF dans le nom ou la valeur (`ValueError`), prévenant l'injection d'en-têtes (CRLF).
+
+### Ajouté
+
+- **`Api\Router`** : contraintes par paramètre `{name:contrainte}` (sous-expression regex de confiance), p. ex. `{id:\d+}` ou `{code:\d{4}}`, pour restreindre le matching (les accolades de quantifieur sont gérées).
+- **`Api\Router`** : un nom de paramètre dupliqué dans un motif lève désormais `InvalidArgumentException` à l'ajout (auparavant : route qui ne matchait jamais, en silence).
+- **`DotEnv::loadFile/loadLines/tryLoadFile`** : paramètre `bool $overwrite = false`.
+- **Tests** : couverture des nouveaux comportements (non-écrasement, quotes/commentaires, clés invalides, inviolabilité des options cURL, redirections + bearer, CRLF, contraintes de route, noms dupliqués).
+
+### Modifié
+
+- **`DotEnv`** : parsing des valeurs amélioré — trim, retrait des guillemets simples/doubles entourants (séquences `\n \r \t \" \\` interprétées en guillemets doubles), retrait des commentaires en fin de ligne (` # ...`) pour les valeurs non quotées, tolérance du préfixe `export `.
+- **`Request::followRedirects()`** : accepte `?bool` (`null` = mode automatique).
+
+### Note de mise à niveau
+
+- **`DotEnv`** (rupture) : si vous comptiez sur l'écrasement des variables existantes, appelez explicitement `DotEnv::loadFile($path, overwrite: true)` (ou `loadLines($lines, true)`). Le parsing trim désormais les valeurs et retire les guillemets entourants : adaptez les fixtures qui dépendaient des espaces / guillemets bruts.
+- **`Request`** (rupture potentielle) : avec un `bearerToken()`/auth basique, les redirections ne sont plus suivies par défaut. Pour rétablir l'ancien comportement (au risque de divulguer le jeton), appelez `->followRedirects(true)` explicitement. `header()` lève désormais sur CR/LF.
+
 ## [1.6.0] - 2026-05-29
 
 ### Sécurité

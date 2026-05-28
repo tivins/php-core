@@ -19,7 +19,12 @@ class Request
     private array $query = [];
     private string|array|null $body = null;
     private int $timeoutSeconds = 30;
-    private bool $followRedirects = true;
+    /**
+     * `null` = automatique : on suit les redirections sauf si des identifiants (Authorization /
+     * auth basique) sont présents, afin de ne pas les divulguer à une cible de redirection
+     * potentiellement cross-origin. Une valeur explicite via {@see followRedirects()} prime.
+     */
+    private ?bool $followRedirects = null;
     private bool $verifySsl = true;
     private string $userAgent = 'tivins/php-core (+https://github.com/tivins/php-core)';
     /**
@@ -80,11 +85,26 @@ class Request
 
     /**
      * Ajoute ou remplace un en-tête (une seule valeur par nom côté requête).
+     *
+     * @throws ValueError si le nom est vide, ou si le nom/la valeur contient un retour
+     *                    chariot ou un saut de ligne (prévention de l'injection d'en-têtes / CRLF)
      */
     public function header(string $name, string $value): static
     {
-        $this->headers[trim($name)] = $value;
+        $name = trim($name);
+        if ($name === '') {
+            throw new ValueError('Header name must not be empty.');
+        }
+        if (self::containsCrlf($name) || self::containsCrlf($value)) {
+            throw new ValueError('Header name and value must not contain CR or LF characters.');
+        }
+        $this->headers[$name] = $value;
         return $this;
+    }
+
+    private static function containsCrlf(string $value): bool
+    {
+        return str_contains($value, "\r") || str_contains($value, "\n");
     }
 
     /**
@@ -137,7 +157,14 @@ class Request
         return $this;
     }
 
-    public function followRedirects(bool $follow = true): static
+    /**
+     * Force le suivi (ou non) des redirections.
+     *
+     * Passer `null` rétablit le mode automatique : suivi sauf si des identifiants sont présents.
+     * Activer explicitement le suivi alors qu'un en-tête `Authorization` est posé peut divulguer
+     * le jeton à la cible de redirection (cURL réémet les en-têtes personnalisés sur redirection).
+     */
+    public function followRedirects(?bool $follow = true): static
     {
         $this->followRedirects = $follow;
         return $this;
@@ -194,28 +221,53 @@ class Request
         /** @var array<string, list<string>> $responseHeaders */
         $responseHeaders = [];
 
+        $options = $this->buildCurlOptions();
+        $options[CURLOPT_HEADERFUNCTION] = static function ($curl, string $headerLine) use (&$responseHeaders): int {
+            $len = strlen($headerLine);
+            if (str_contains($headerLine, ':')) {
+                [$name, $value] = explode(':', $headerLine, 2);
+                $name = strtolower(trim($name));
+                $value = trim($value);
+                $responseHeaders[$name][] = $value;
+            }
+            return $len;
+        };
+
+        curl_setopt_array($ch, $options);
+
+        $body = curl_exec($ch);
+        $errno = curl_errno($ch);
+        $error = curl_error($ch) ?: '';
+        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+        if ($body === false) {
+            $body = '';
+        }
+
+        return new Response($status, $responseHeaders, is_string($body) ? $body : '', $errno, $error);
+    }
+
+    /**
+     * Construit le tableau d'options cURL final.
+     *
+     * Les options fournies via {@see curlOptions()} sont fusionnées par-dessus les défauts, MAIS
+     * les garde-fous de sécurité (protocoles autorisés et vérification TLS) sont ré-appliqués
+     * ensuite : un appelant ne peut donc pas désactiver silencieusement l'anti-SSRF ou la
+     * vérification TLS via `curlOptions()`. Utilisez {@see allowedProtocols()} / {@see verifySsl()}.
+     *
+     * @return array<int, mixed>
+     */
+    private function buildCurlOptions(): array
+    {
         $options = [
             CURLOPT_CUSTOMREQUEST => $this->method,
             CURLOPT_RETURNTRANSFER => true,
             CURLOPT_HEADER => false,
-            CURLOPT_FOLLOWLOCATION => $this->followRedirects,
+            CURLOPT_FOLLOWLOCATION => $this->shouldFollowRedirects(),
             CURLOPT_MAXREDIRS => 10,
+            CURLOPT_UNRESTRICTED_AUTH => false,
             CURLOPT_TIMEOUT => $this->timeoutSeconds,
-            CURLOPT_SSL_VERIFYPEER => $this->verifySsl,
-            CURLOPT_SSL_VERIFYHOST => $this->verifySsl ? 2 : 0,
-            CURLOPT_PROTOCOLS => $this->allowedProtocols,
-            CURLOPT_REDIR_PROTOCOLS => $this->allowedProtocols,
             CURLOPT_USERAGENT => $this->userAgent,
-            CURLOPT_HEADERFUNCTION => static function ($curl, string $headerLine) use (&$responseHeaders): int {
-                $len = strlen($headerLine);
-                if (str_contains($headerLine, ':')) {
-                    [$name, $value] = explode(':', $headerLine, 2);
-                    $name = strtolower(trim($name));
-                    $value = trim($value);
-                    $responseHeaders[$name][] = $value;
-                }
-                return $len;
-            },
         ];
 
         // Magasin de certificats natif du système (souvent utile sous Windows si curl.cainfo n’est pas défini).
@@ -235,18 +287,33 @@ class Request
             $options[CURLOPT_HTTPHEADER] = $headerLines;
         }
 
-        curl_setopt_array($ch, array_replace($options, $this->curlOptions));
+        $merged = array_replace($options, $this->curlOptions);
 
-        $body = curl_exec($ch);
-        $errno = curl_errno($ch);
-        $error = curl_error($ch) ?: '';
-        $status = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        // Garde-fous inviolables : appliqués APRÈS la fusion pour primer sur `curlOptions()`.
+        $merged[CURLOPT_PROTOCOLS] = $this->allowedProtocols;
+        $merged[CURLOPT_REDIR_PROTOCOLS] = $this->allowedProtocols;
+        $merged[CURLOPT_SSL_VERIFYPEER] = $this->verifySsl;
+        $merged[CURLOPT_SSL_VERIFYHOST] = $this->verifySsl ? 2 : 0;
 
-        if ($body === false) {
-            $body = '';
+        return $merged;
+    }
+
+    private function shouldFollowRedirects(): bool
+    {
+        if ($this->followRedirects !== null) {
+            return $this->followRedirects;
         }
 
-        return new Response($status, $responseHeaders, is_string($body) ? $body : '', $errno, $error);
+        return !$this->hasSensitiveCredentials();
+    }
+
+    private function hasSensitiveCredentials(): bool
+    {
+        if (isset($this->curlOptions[CURLOPT_USERPWD])) {
+            return true;
+        }
+
+        return $this->hasHeader('Authorization');
     }
 
     private function buildUrl(): string

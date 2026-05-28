@@ -15,6 +15,12 @@ final class DotEnvTest extends TestCase
         'DATABASE_URL',
         'REDIS_URL',
         'JWT_ALG',
+        'QUOTED',
+        'SINGLE',
+        'WITH_COMMENT',
+        'PRE_EXISTING',
+        '1INVALID',
+        'BAD KEY',
     ];
 
     protected function tearDown(): void
@@ -62,6 +68,58 @@ final class DotEnvTest extends TestCase
 
         self::assertSame('php-core', $_ENV['APP_NAME']);
         self::assertArrayNotHasKey('this-line-has-no-equals-sign', $_ENV);
-        self::assertSame(' testing', $_ENV['APP_ENV']);
+        self::assertSame('testing', $_ENV['APP_ENV']);
+    }
+
+    public function testDoesNotOverwriteExistingEnvByDefault(): void
+    {
+        $_ENV['PRE_EXISTING'] = 'original';
+        putenv('PRE_EXISTING=original');
+
+        DotEnv::loadLines(['PRE_EXISTING=from-dotenv']);
+
+        self::assertSame('original', $_ENV['PRE_EXISTING']);
+        self::assertSame('original', getenv('PRE_EXISTING'));
+    }
+
+    public function testOverwriteFlagAllowsReplacingExistingEnv(): void
+    {
+        $_ENV['PRE_EXISTING'] = 'original';
+        putenv('PRE_EXISTING=original');
+
+        DotEnv::loadLines(['PRE_EXISTING=from-dotenv'], overwrite: true);
+
+        self::assertSame('from-dotenv', $_ENV['PRE_EXISTING']);
+    }
+
+    public function testStripsSurroundingQuotesAndInterpretsEscapes(): void
+    {
+        DotEnv::loadLines([
+            'QUOTED="hello\nworld"',
+            "SINGLE='raw \\n value'",
+        ]);
+
+        self::assertSame("hello\nworld", $_ENV['QUOTED']);
+        self::assertSame('raw \\n value', $_ENV['SINGLE']);
+    }
+
+    public function testStripsInlineCommentForUnquotedValue(): void
+    {
+        DotEnv::loadLines([
+            'WITH_COMMENT=value # trailing comment',
+        ]);
+
+        self::assertSame('value', $_ENV['WITH_COMMENT']);
+    }
+
+    public function testSkipsInvalidKeyNames(): void
+    {
+        DotEnv::loadLines([
+            '1INVALID=nope',
+            'BAD KEY=nope',
+        ]);
+
+        self::assertArrayNotHasKey('1INVALID', $_ENV);
+        self::assertArrayNotHasKey('BAD KEY', $_ENV);
     }
 }
