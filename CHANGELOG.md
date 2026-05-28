@@ -4,6 +4,30 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s’inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), et ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [1.6.0] - 2026-05-29
+
+### Sécurité
+
+- **`Api\Router`** : les segments littéraux des motifs sont désormais échappés (`preg_quote`). Auparavant, des caractères comme `.`, `+` ou `#` étaient interprétés comme métacaractères regex, ce qui pouvait élargir le matching (`/v1/api` matchait `/v1xapi`) ou casser le délimiteur — risque de routage involontaire.
+- **`Request`** : nouvelle liste blanche de protocoles cURL, restreinte par défaut à `http`/`https` (`CURLOPT_PROTOCOLS` et `CURLOPT_REDIR_PROTOCOLS`). Bloque `file://`, `gopher://`, `dict://`, etc., y compris via redirection (durcissement anti-SSRF).
+- **`Api\AccessToken`** : `issue()` refuse un identifiant `<= 0` (`InvalidArgumentException`) et `verify()` rejette un jeton dont le `sub` n'est pas strictement positif.
+
+### Ajouté
+
+- **`Request::allowedProtocols(int $protocols)`** : configure le masque `CURLPROTO_*` autorisé (à n'élargir que pour des URL de confiance).
+- **`tests/RouterTest.php`** : couverture du matching, des paramètres `{name}` et de l'échappement des métacaractères.
+- **`RequestTest`** : vérifie que `file://` est bloqué par défaut et accessible uniquement via `allowedProtocols(CURLPROTO_FILE)`.
+- **`AccessTokenTest`** / **`DotEnvTest`** : cas `sub <= 0` et lignes `.env` malformées.
+
+### Modifié
+
+- **`DotEnv::loadLines`** : ignore les lignes sans `=` (plus de warning « Undefined array key ») et trim la clé ; les clés vides sont ignorées.
+- **`scripts/new_release.php`** : vérifie les codes de sortie de `git tag` et `git push` et échoue explicitement.
+
+### Note de mise à niveau
+
+- Si vous utilisiez `Request` avec des URL `file://` (ou un autre protocole non HTTP), ajoutez désormais `->allowedProtocols(CURLPROTO_FILE)` (ou le masque adapté).
+
 ## [1.5.2] - 2026-05-20
 
 ### Corrigé

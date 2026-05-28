@@ -35,7 +35,8 @@ Nous nous efforçons de répondre sous **72 heures** ouvrées et de publier un c
 
 ### HTTP sortant (`Request`)
 
-- **Ne pas** construire l’URL à partir d’entrées utilisateur sans liste blanche (risque SSRF).
+- Les protocoles sont restreints à `http`/`https` par défaut (anti-SSRF). N’élargir cette liste via `allowedProtocols()` (ex. `CURLPROTO_FILE`) que pour des URL de confiance.
+- **Ne pas** construire l’URL à partir d’entrées utilisateur sans liste blanche d’hôtes (risque SSRF, y compris vers des IP internes).
 - Garder `verifySsl(true)` sauf besoin explicite en environnement de test.
 
 ### Fichiers (`Io\File`)

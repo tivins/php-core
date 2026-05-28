@@ -18,9 +18,17 @@ $gitVersion = "v$version";
 // Create a new tag
 $cmd = 'git tag -a '.escapeshellarg($gitVersion).' -m '.escapeshellarg('Release '.$gitVersion);
 echo $cmd . "\n";
-exec($cmd);
+exec($cmd, $tagOutput, $tagExitCode);
+if ($tagExitCode !== 0) {
+    fwrite(STDERR, "Erreur : échec de la création du tag $gitVersion.\n");
+    exit(1);
+}
 
 // Push the tag
 $cmd = "git push origin ".escapeshellarg($gitVersion);
 echo $cmd . "\n";
-exec($cmd);
+exec($cmd, $pushOutput, $pushExitCode);
+if ($pushExitCode !== 0) {
+    fwrite(STDERR, "Erreur : échec du push du tag $gitVersion.\n");
+    exit(1);
+}

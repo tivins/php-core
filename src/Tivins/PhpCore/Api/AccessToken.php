@@ -17,10 +17,14 @@ final class AccessToken
     }
 
     /**
+     * @throws \InvalidArgumentException si $userId n'est pas strictement positif
      * @throws \RuntimeException si {@see JwtSigningSecret::ENV_NAME} n'est pas configurée correctement
      */
     public static function issue(int $userId): string
     {
+        if ($userId <= 0) {
+            throw new \InvalidArgumentException('User id must be a positive integer.');
+        }
         $now = time();
         $payload = [
             'sub' => (string) $userId,
@@ -44,8 +48,9 @@ final class AccessToken
             if (! isset($decoded->sub)) {
                 return null;
             }
+            $userId = (int) $decoded->sub;
 
-            return (int) $decoded->sub;
+            return $userId > 0 ? $userId : null;
         } catch (\Throwable) {
             return null;
         }

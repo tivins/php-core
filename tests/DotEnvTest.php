@@ -50,4 +50,18 @@ final class DotEnvTest extends TestCase
         self::assertSame('redis://127.0.0.1:6379/0', $_ENV['REDIS_URL']);
         self::assertSame('HS256=default', $_ENV['JWT_ALG']);
     }
+
+    public function testLoadLinesSkipsMalformedLinesWithoutWarning(): void
+    {
+        DotEnv::loadLines([
+            'APP_NAME=php-core',
+            'this-line-has-no-equals-sign',
+            '=novalue',
+            '  APP_ENV = testing ',
+        ]);
+
+        self::assertSame('php-core', $_ENV['APP_NAME']);
+        self::assertArrayNotHasKey('this-line-has-no-equals-sign', $_ENV);
+        self::assertSame(' testing', $_ENV['APP_ENV']);
+    }
 }

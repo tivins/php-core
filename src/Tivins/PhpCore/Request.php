@@ -22,6 +22,11 @@ class Request
     private bool $followRedirects = true;
     private bool $verifySsl = true;
     private string $userAgent = 'tivins/php-core (+https://github.com/tivins/php-core)';
+    /**
+     * Masque binaire CURLPROTO_* autorisé pour la requête et les redirections.
+     * Par défaut HTTP/HTTPS uniquement, afin de bloquer `file://`, `gopher://`, etc. (anti-SSRF).
+     */
+    private int $allowedProtocols = CURLPROTO_HTTP | CURLPROTO_HTTPS;
     /** @var array<int, mixed> Options CURLOPT_* => valeur */
     private array $curlOptions = [];
 
@@ -151,6 +156,18 @@ class Request
     }
 
     /**
+     * Restreint les protocoles autorisés (requête et redirections) via un masque CURLPROTO_*.
+     *
+     * Par défaut, seuls `http`/`https` sont permis. N'élargir cette liste (ex. `CURLPROTO_FILE`)
+     * que pour des URL de confiance, jamais construites à partir d'entrées utilisateur (risque SSRF).
+     */
+    public function allowedProtocols(int $protocols): static
+    {
+        $this->allowedProtocols = $protocols;
+        return $this;
+    }
+
+    /**
      * Fusionne des options cURL (écrase une clé déjà définie via cette méthode).
      *
      * @param array<int, mixed> $options
@@ -186,6 +203,8 @@ class Request
             CURLOPT_TIMEOUT => $this->timeoutSeconds,
             CURLOPT_SSL_VERIFYPEER => $this->verifySsl,
             CURLOPT_SSL_VERIFYHOST => $this->verifySsl ? 2 : 0,
+            CURLOPT_PROTOCOLS => $this->allowedProtocols,
+            CURLOPT_REDIR_PROTOCOLS => $this->allowedProtocols,
             CURLOPT_USERAGENT => $this->userAgent,
             CURLOPT_HEADERFUNCTION => static function ($curl, string $headerLine) use (&$responseHeaders): int {
                 $len = strlen($headerLine);

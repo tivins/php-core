@@ -40,6 +40,25 @@ final class AccessTokenTest extends TestCase
         self::assertNull(AccessToken::verify('not-a-jwt'));
     }
 
+    public function testIssueRejectsNonPositiveUserId(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        AccessToken::issue(0);
+    }
+
+    public function testVerifyRejectsNonPositiveSubject(): void
+    {
+        $secret = self::SECRET;
+        $now = time();
+        $forged = \Firebase\JWT\JWT::encode(
+            ['sub' => '0', 'iat' => $now, 'exp' => $now + 3600],
+            $secret,
+            'HS256'
+        );
+
+        self::assertNull(AccessToken::verify($forged));
+    }
+
     public function testIssueThrowsWhenSecretMissing(): void
     {
         unset($_ENV[JwtSigningSecret::ENV_NAME]);

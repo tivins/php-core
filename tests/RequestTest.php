@@ -20,11 +20,29 @@ final class RequestTest extends TestCase
         try {
             self::assertNotFalse(file_put_contents($tmp, 'hello-curl'));
             $url = self::pathToFileUrl($tmp);
-            $response = Request::get($url)->send();
+            $response = Request::get($url)
+                ->allowedProtocols(CURLPROTO_FILE)
+                ->send();
 
             self::assertFalse($response->hasCurlError(), $response->getCurlError());
             self::assertSame(0, $response->getCurlErrno());
             self::assertStringContainsString('hello-curl', $response->getBody());
+        } finally {
+            unlink($tmp);
+        }
+    }
+
+    public function testFileProtocolBlockedByDefault(): void
+    {
+        $tmp = tempnam(sys_get_temp_dir(), 'phpcore_req_');
+        self::assertNotFalse($tmp);
+        try {
+            self::assertNotFalse(file_put_contents($tmp, 'secret-data'));
+            $url = self::pathToFileUrl($tmp);
+            $response = Request::get($url)->send();
+
+            self::assertTrue($response->hasCurlError());
+            self::assertStringNotContainsString('secret-data', $response->getBody());
         } finally {
             unlink($tmp);
         }

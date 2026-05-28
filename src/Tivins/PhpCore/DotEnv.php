@@ -36,9 +36,16 @@ class DotEnv
             if ($line === '' || $line[0] === '#') {
                 continue;
             }
-            $parts = explode('=', $line, 2);
-            putenv($parts[0] . '=' . $parts[1]);
-            $_ENV[$parts[0]] = $parts[1];
+            if (!str_contains($line, '=')) {
+                continue;
+            }
+            [$key, $value] = explode('=', $line, 2);
+            $key = trim($key);
+            if ($key === '') {
+                continue;
+            }
+            putenv($key . '=' . $value);
+            $_ENV[$key] = $value;
         }
     }
 }

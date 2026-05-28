@@ -17,12 +17,43 @@ final class Router
      */
     public function add(string $method, string $pattern, callable $handler): void
     {
-        $regex = preg_replace('#\{([A-Za-z_][A-Za-z0-9_]*)\}#', '(?P<$1>[^/]+)', $pattern);
         $this->routes[] = [
             'method' => strtoupper($method),
-            'regex' => '#^' . $regex . '$#',
+            'regex' => '#^' . self::compilePattern($pattern) . '$#',
             'handler' => $handler,
         ];
+    }
+
+    /**
+     * Compile un motif en regex : les `{name}` deviennent des groupes capturés `[^/]+`,
+     * tout le reste est échappé via {@see preg_quote()} pour éviter qu'un caractère spécial
+     * (`.`, `#`, `+`, etc.) n'élargisse le matching ou ne casse le délimiteur.
+     */
+    private static function compilePattern(string $pattern): string
+    {
+        $segments = preg_split(
+            '#(\{[A-Za-z_][A-Za-z0-9_]*\})#',
+            $pattern,
+            -1,
+            PREG_SPLIT_DELIM_CAPTURE
+        );
+        if ($segments === false) {
+            return preg_quote($pattern, '#');
+        }
+
+        $regex = '';
+        foreach ($segments as $segment) {
+            if ($segment === '') {
+                continue;
+            }
+            if (preg_match('#^\{([A-Za-z_][A-Za-z0-9_]*)\}$#', $segment, $m) === 1) {
+                $regex .= '(?P<' . $m[1] . '>[^/]+)';
+                continue;
+            }
+            $regex .= preg_quote($segment, '#');
+        }
+
+        return $regex;
     }
 
     /**
