@@ -4,6 +4,12 @@ Tous les changements notables de ce projet sont documentés dans ce fichier.
 
 Le format s’inspire de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/), et ce projet suit [Semantic Versioning](https://semver.org/lang/fr/).
 
+## [2.0.0] - 2026-06-21
+
+### Added
+
+- **`Ansi256`** : afficher du texte dans un terminal en utilisant les 256 couleurs
+
 ## [2.0.0] - 2026-05-29
 
 ### Sécurité
